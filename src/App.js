@@ -56,6 +56,7 @@ function App() {
 
       gui.add({ Particle: () => managerRef.current.startSimulation('particle') }, 'Particle');
       gui.add({ Cloth: () => managerRef.current.startSimulation('cloth') }, 'Cloth');
+      gui.add({ Clear: () => managerRef.current.clear() }, 'Clear');
     }
   }, []);
 
