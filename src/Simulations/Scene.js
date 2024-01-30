@@ -1,7 +1,10 @@
-import React, { useState, Component } from 'react'
-import { Node, Spring, Cloth } from './Physics';
+import { Node, Cloth } from './Physics';
 import { Scene, PerspectiveCamera, Vector3, WebGLRenderer, HemisphereLight, PlaneGeometry, MeshStandardMaterial, Mesh, ShaderMaterial } from 'three';
 import GUI from 'lil-gui';
+
+const camera_pos_x = 0.0;
+const camera_pos_y = 20.0;
+const camera_pos_z = 150.0;
 
 export class SceneManager {
     constructor(n, m) {
@@ -19,6 +22,8 @@ export class SceneManager {
         this.initializeScene();
         this.setupGUI();
 
+        this.child_index_src = this.scene.children.length;
+
         /* Particle Simulation */
         this.particle_size = 10;
         this.x_min = -5;
@@ -31,6 +36,8 @@ export class SceneManager {
         /* Cloth Simulation */
         this.n_size = 8;
         this.m_size = 8;
+        this.x_size = 50;
+        this.y_size = 50;
 
         console.log(`Creating cloth with ${n} x ${m} nodes`);
     }
@@ -75,6 +82,8 @@ export class SceneManager {
         this.current_type = "empty";
 
         this.clearRange(this.child_index_src,this.child_index_dst);
+        this.cloth_model = null;
+        this.initGUI();
     }
 
     setupGUI() {
@@ -97,7 +106,7 @@ export class SceneManager {
 
         // 카메라 생성
         this.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        this.camera.position.set(0, 15, 50); // 적절한 위치 설정
+        this.camera.position.set(camera_pos_x, camera_pos_y, camera_pos_z); // 적절한 위치 설정
         this.camera.lookAt(0, 0, 0);
 
         // 렌더러 생성
@@ -127,7 +136,7 @@ export class SceneManager {
   }
 `;
         // 지오메트리 및 쉐이더 재질 생성
-        const geometry = new PlaneGeometry(75, 75);
+        const geometry = new PlaneGeometry(200, 200);
         const material = new ShaderMaterial({
             vertexShader,
             fragmentShader
@@ -139,75 +148,103 @@ export class SceneManager {
         this.scene.add(planeMesh);
     }
 
-    startSimulation(simulationType) {
-        const gui = new GUI({
+    initGUI(){
+        if (this.gui) {
+            this.gui.destroy();
+        }
+
+        this.gui = new GUI({
             container: document.body,
             autoPlace: false
         });
+    }
+
+    startSimulation(simulationType) {
+        this.initGUI();
         console.log(simulationType);
         this.current_type = simulationType;
         if (simulationType === "particle") {
-            gui.title("Settings");
-            gui.domElement.style.position = 'absolute';
-            gui.domElement.style.top = '80px';
-            gui.domElement.style.left = '0px';
+            this.gui.title("Particle Settings");
+            this.gui.domElement.style.position = 'absolute';
+            this.gui.domElement.style.top = '80px';
+            this.gui.domElement.style.left = '0px';
 
             const particleSettings = { 'number of particles': 10, 'x_min': -5, 'x_max': 5, 'z_min': -5, 'z_max': 5, 'y_min': 5 }; // 기본값 설정            
             const particleActions = {
                 createParticles: () => this.createParticles()
             };
-            gui.add(particleSettings, 'number of particles', 1, 10000).step(1).name('Particles').onChange(value => {
+            this.gui.add(particleSettings, 'number of particles', 1, 10000).step(1).name('Particles').onChange(value => {
                 this.particle_size = value;
             });
-            gui.add(particleSettings, 'x_min', -50, -5).step(1).name('X Min').onChange(value => {
+            this.gui.add(particleSettings, 'x_min', -50, -5).step(1).name('X Min').onChange(value => {
                 this.x_min = value;
             });
-            gui.add(particleSettings, 'x_max', 5, 50).step(1).name('X Max').onChange(value => {
+            this.gui.add(particleSettings, 'x_max', 5, 50).step(1).name('X Max').onChange(value => {
                 this.x_max = value;
             });
-            gui.add(particleSettings, 'z_min', -50, -5).step(1).name('Z Min').onChange(value => {
+            this.gui.add(particleSettings, 'z_min', -50, -5).step(1).name('Z Min').onChange(value => {
                 this.z_min = value;
             });
-            gui.add(particleSettings, 'z_max', 5, 50).step(1).name('Z Max').onChange(value => {
+            this.gui.add(particleSettings, 'z_max', 5, 50).step(1).name('Z Max').onChange(value => {
                 this.z_max = value;
             });
-            gui.add(particleSettings, 'y_min', 5, 50).step(1).name('Y Min').onChange(value => {
+            this.gui.add(particleSettings, 'y_min', 5, 50).step(1).name('Y Min').onChange(value => {
                 this.y_min = value;
             });
-            gui.add(particleActions, 'createParticles').name('Create Particles');
+            this.gui.add(particleActions, 'createParticles').name('Create Particles');
 
         } else {
-            gui.title("Settings");
-            gui.domElement.style.position = 'absolute';
-            gui.domElement.style.top = '80px';
-            gui.domElement.style.left = '0px';
+            this.gui.title("Cloth Settings");
+            this.gui.domElement.style.position = 'absolute';
+            this.gui.domElement.style.top = '80px';
+            this.gui.domElement.style.left = '0px';
 
-            const clothSettings = { 'cloth N': 10, 'cloth M': 10 }; // 기본값 설정
-            gui.add(clothSettings, 'cloth N', 1, 100000).step(5).onChange(value => {
-                // 여기에 N 크기 변경시 실행할 로직
+            const clothSettings = { 'cloth N': 8, 'cloth M': 8, 'x Size':30, 'y Size':30 }; // 기본값 설정
+            this.gui.add(clothSettings, 'cloth N', 1, 100000).step(1).onChange(value => {                
                 this.n_size = value;
             });
-            gui.add(clothSettings, 'cloth M', 1, 100000).step(5).onChange(value => {
-                // 여기에 M 크기 변경시 실행할 로직
+            this.gui.add(clothSettings, 'cloth M', 1, 100000).step(1).onChange(value => {                
                 this.m_size = value;
             });
+            this.gui.add(clothSettings, 'x Size', 10, 50).step(1).onChange(value => {                
+                this.x_size = value;
+            });
+            this.gui.add(clothSettings, 'y Size', 10, 50).step(1).onChange(value => {                
+                this.y_size = value;
+            });
+            const particleActions = {
+                createCloth: () => this.createCloth()
+            };
+            this.gui.add(particleActions, 'createCloth').name('Create Cloth');
         }
+    }
+
+    createCloth(){
+        console.log("create cloth function");        
+        this.cloth_model = new Cloth(this.n_size, this.m_size, this.x_size, this.y_size);
+        for(let i=0;i<this.cloth_model.nodes.length;i++){
+            this.scene.add(this.cloth_model.nodes.at(i).mesh);
+        }
+        for(let i=0;i<this.cloth_model.springs.length;i++){
+            this.scene.add(this.cloth_model.springs.at(i).mesh);
+        }
+        this.current_type = "cloth";
+        this.child_index_dst = this.scene.children.length;
+
+        this.test = 0;
     }
 
     createParticles() {
         console.log("create particle function");
         console.log(this.particle_size);
-        this.child_index_src = this.scene.children.length;
+        
         for (let i = 0; i < this.particle_size; i++) {
             const pos = new Vector3(
                 Math.random() * (this.x_max - this.x_min) + this.x_min,
-                Math.random() * 10 + this.y_min,    // Y 좌표: 0 ~ 10 범위 내 랜덤
+                Math.random() * (30 - this.y_min) + this.y_min,    // Y 좌표: 0 ~ 10 범위 내 랜덤
                 Math.random() * (this.z_max - this.z_min) + this.z_min
             );
-            const vel = new Vector3(0.0, 0.0, 0.0); // 초기 속도 (기본값 사용)
-            const acc = new Vector3(0.0, -9.8, 0.0); // 초기 가속도 (기본값 사용)
-
-            const node = new Node(pos, vel, acc);
+            const node = new Node(pos, new Vector3(), new Vector3());
             this.particles.push(node);
             this.scene.add(node.mesh);
         }
@@ -219,7 +256,7 @@ export class SceneManager {
         requestAnimationFrame((time) => this.updateFPSAndRender(time));
     }
 
-    updateFPSAndRender(time) {
+    updateFPSAndRender(time) {        
         const deltaTime = (time - this.lastTime) / 1000;
         this.totalDeltaTime += deltaTime;
         this.frameCount++;
@@ -237,7 +274,11 @@ export class SceneManager {
             }
         }
         else {
-
+            if(this.cloth_model)
+            {
+                this.cloth_model.update(0.001);
+                this.test++;
+            }
         }
 
         this.lastTime = time;
