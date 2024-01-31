@@ -37,7 +37,7 @@ export class SceneManager {
         this.n_size = 8;
         this.m_size = 8;
         this.x_size = 50;
-        this.y_size = 50;
+        this.y_size = 50;                
 
         console.log(`Creating cloth with ${n} x ${m} nodes`);
     }
@@ -78,6 +78,8 @@ export class SceneManager {
 
         this.n_size = 8;
         this.m_size = 8;
+        this.x_size = 50;
+        this.y_size = 50;
 
         this.current_type = "empty";
 
@@ -199,7 +201,7 @@ export class SceneManager {
             this.gui.domElement.style.top = '80px';
             this.gui.domElement.style.left = '0px';
 
-            const clothSettings = { 'cloth N': 8, 'cloth M': 8, 'x Size':30, 'y Size':30, 'Stiffness':500, 'Damping':0.001 }; // 기본값 설정
+            const clothSettings = { 'cloth N': 8, 'cloth M': 8, 'x Size':30, 'y Size':30, 'Stiffness':500, 'Damping':0.001, 'line fix':false }; // 기본값 설정
             this.gui.add(clothSettings, 'cloth N', 1, 100000).step(1).onChange(value => {                
                 this.n_size = value;
             });
@@ -212,18 +214,20 @@ export class SceneManager {
             this.gui.add(clothSettings, 'y Size', 10, 50).step(1).onChange(value => {                
                 this.y_size = value;
             });
-            this.gui.add(clothSettings, 'Stiffness', 10, 1000).step(1).onChange(value => {                
+            this.gui.add(clothSettings, 'Stiffness', 10, 10000).step(1).onChange(value => {                
                 if(this.cloth_model)
                 {
                     this.cloth_model.ks = value;
                 }
             });
-            this.gui.add(clothSettings, 'Damping', 0.0001, 1.0).step(0.0001).onChange(value => {                
+            this.gui.add(clothSettings, 'Damping', 0.0001, 10.0).step(0.0001).onChange(value => {                
                 if(this.cloth_model)
                 {
                     this.cloth_model.kd = value;
                 }
             });
+            
+            
             const particleActions = {
                 createCloth: () => this.createCloth()
             };
@@ -242,6 +246,16 @@ export class SceneManager {
         }
         this.current_type = "cloth";
         this.child_index_dst = this.scene.children.length;
+
+        const clothSettings = {'line fix':false};
+
+        this.gui.add(clothSettings, 'line fix').onChange(value => {                
+            if(this.cloth_model)
+            {
+                this.cloth_model.line_fix = value;
+                this.cloth_model.updateNodeStatus();
+            }
+        });
 
         this.test = 0;
     }

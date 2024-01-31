@@ -171,6 +171,8 @@ export class Cloth {
     this.ks = 300.0;
     this.kd = 0.001;
 
+    this.line_fix = false;
+
     this.createNodes();
     this.createSprings();
   }  
@@ -193,9 +195,32 @@ export class Cloth {
         this.nodes.push(node);
       }
     }
-    this.nodes.at(0).fixed = true;
-    this.nodes.at(this.N-1).fixed = true;
+    
+    if(this.line_fix){
+      for(let i=0;i<this.N;i++){
+        this.nodes.at(i).fixed = true;
+      }
+    }else{
+      this.nodes.at(0).fixed = true;
+      this.nodes.at(this.N-1).fixed = true;
+    }
     console.log("create node success");
+  }
+
+  updateNodeStatus(){
+    
+    for(let i=0;i<this.N;i++){
+      this.nodes.at(i).fixed = false;
+    }
+    
+    if(this.line_fix){
+      for(let i=0;i<this.N;i++){
+        this.nodes.at(i).fixed = true;
+      }
+    }else{
+      this.nodes.at(0).fixed = true;
+      this.nodes.at(this.N-1).fixed = true;
+    }
   }
 
   createSprings() {
