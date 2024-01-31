@@ -41,9 +41,9 @@ export class Node {
 
   applyExternalForce(force){
     if (this.fixed) return;
-    this.force.x = force.x;
-    this.force.y = force.y;
-    this.force.z = force.z;
+    this.force.x += force.x;
+    this.force.y += force.y;
+    this.force.z += force.z;
   }
 
   update(dt) {
@@ -51,15 +51,15 @@ export class Node {
     if (this.fixed === true) return;
 
     // 속도 업데이트
-    let f = new Vector3(this.force.x / this.mass + this.gravity.x, this.force.y / this.mass + this.gravity.y,this.force.z / this.mass + this.gravity.z);        
-    this.vel.add(f.multiplyScalar(dt));
+    this.force = this.force.divideScalar(this.mass);
+    this.force.add(this.gravity);    
+    this.vel.add(this.force.multiplyScalar(dt));
     // 위치 업데이트
-    //const displacement = this.vel.clone().multiplyScalar(dt);
-    const displacement = this.vel.clone().multiplyScalar(dt).add(this.acc.clone().multiplyScalar(0.5 * Math.pow(dt, 2)));
-    this.pos.add(displacement);
-
+    //const displacement = this.vel.clone().multiplyScalar(dt);    
+    this.pos.add(this.vel.clone().multiplyScalar(dt));
+    //this.pos.add(this.vel.clone().multiplyScalar(dt).add(this.acc.clone().multiplyScalar(0.5 * Math.pow(dt, 2))));
+    // 충돌처리
     this.collisionCheck();
-
     // 메시의 위치 업데이트
     this.mesh.position.copy(this.pos);
   }
@@ -93,20 +93,34 @@ export class Spring {
   }
 
   updateMesh() {
-    const positions = new Float32Array([
-      this.first.pos.x, this.first.pos.y, this.first.pos.z,
-      this.second.pos.x, this.second.pos.y, this.second.pos.z
-    ]);
+    const positions = this.mesh.geometry.attributes.position.array;
 
-    // 기존 지오메트리의 'position' 속성을 업데이트
-    this.mesh.geometry.setAttribute('position', new BufferAttribute(positions, 3));
-    this.mesh.geometry.attributes.position.needsUpdate = true; // 중요: 업데이트 플래그 설정    
+    // 첫 번째 노드의 위치를 업데이트
+    positions[0] = this.first.pos.x;
+    positions[1] = this.first.pos.y;
+    positions[2] = this.first.pos.z;
+  
+    // 두 번째 노드의 위치를 업데이트
+    positions[3] = this.second.pos.x;
+    positions[4] = this.second.pos.y;
+    positions[5] = this.second.pos.z;
+  
+    // 위치 데이터가 변경되었음을 알립니다.
+    this.mesh.geometry.attributes.position.needsUpdate = true;
+  
+    // const positions = new Float32Array([
+    //   this.first.pos.x, this.first.pos.y, this.first.pos.z,
+    //   this.second.pos.x, this.second.pos.y, this.second.pos.z
+    // ]);
+
+    // // 기존 지오메트리의 'position' 속성을 업데이트
+    // this.mesh.geometry.setAttribute('position', new BufferAttribute(positions, 3));
+    // this.mesh.geometry.attributes.position.needsUpdate = true; // 중요: 업데이트 플래그 설정    
   }
 
   update(){
-    // 스프링 힘 계산 및 적용
-    let force = this.calculationForce();
-    this.applyForce(force);
+    // 스프링 힘 계산 및 적용    
+    this.applyForce(this.calculationForce());
     // 스프링 메시 업데이트
     this.updateMesh();
   }
@@ -154,12 +168,12 @@ export class Cloth {
     this.nodes = []; // 모든 노드를 저장할 배열
     this.springs = []; // 모든 스프링을 저장할 배열
 
-    this.ks = 0.1;
+    this.ks = 300.0;
     this.kd = 0.001;
 
     this.createNodes();
     this.createSprings();
-  }
+  }  
 
   createNodes() {
     // N * M 그리드의 노드를 생성하는 로직
@@ -263,7 +277,9 @@ export class Cloth {
   // Cloth 모델의 업데이트 로직, 물리 시뮬레이션 등
   update(dt) {
     // 여기에 시뮬레이션 업데이트 로직 구현
-    
+    for (const node of this.nodes) {
+      node.clearForce();
+    }    
     for (const spring of this.springs){
       spring.update();      
     }

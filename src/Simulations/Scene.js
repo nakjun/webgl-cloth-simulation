@@ -199,7 +199,7 @@ export class SceneManager {
             this.gui.domElement.style.top = '80px';
             this.gui.domElement.style.left = '0px';
 
-            const clothSettings = { 'cloth N': 8, 'cloth M': 8, 'x Size':30, 'y Size':30 }; // 기본값 설정
+            const clothSettings = { 'cloth N': 8, 'cloth M': 8, 'x Size':30, 'y Size':30, 'Stiffness':500, 'Damping':0.001 }; // 기본값 설정
             this.gui.add(clothSettings, 'cloth N', 1, 100000).step(1).onChange(value => {                
                 this.n_size = value;
             });
@@ -211,6 +211,18 @@ export class SceneManager {
             });
             this.gui.add(clothSettings, 'y Size', 10, 50).step(1).onChange(value => {                
                 this.y_size = value;
+            });
+            this.gui.add(clothSettings, 'Stiffness', 10, 1000).step(1).onChange(value => {                
+                if(this.cloth_model)
+                {
+                    this.cloth_model.ks = value;
+                }
+            });
+            this.gui.add(clothSettings, 'Damping', 0.0001, 1.0).step(0.0001).onChange(value => {                
+                if(this.cloth_model)
+                {
+                    this.cloth_model.kd = value;
+                }
             });
             const particleActions = {
                 createCloth: () => this.createCloth()
@@ -276,7 +288,7 @@ export class SceneManager {
         else {
             if(this.cloth_model)
             {
-                this.cloth_model.update(0.001);
+                this.cloth_model.update(0.01);
                 this.test++;
             }
         }
