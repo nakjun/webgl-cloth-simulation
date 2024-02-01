@@ -109,7 +109,7 @@ export class SceneManager {
         // 카메라 생성
         this.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.camera.position.set(camera_pos_x, camera_pos_y, camera_pos_z); // 적절한 위치 설정
-        this.camera.lookAt(0, 0, 0);
+        this.camera.lookAt(0, 0, 0);        
 
         // 렌더러 생성
         this.renderer = new WebGLRenderer({ antialias: true });
