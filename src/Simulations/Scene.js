@@ -2,9 +2,9 @@ import { Node, Cloth } from './Physics';
 import { Scene, PerspectiveCamera, Vector3, WebGLRenderer, HemisphereLight, PlaneGeometry, MeshStandardMaterial, Mesh, ShaderMaterial } from 'three';
 import GUI from 'lil-gui';
 
-const camera_pos_x = 0.0;
-const camera_pos_y = 20.0;
-const camera_pos_z = 150.0;
+const camera_pos_x = -48.0;
+const camera_pos_y = 100.0;
+const camera_pos_z = 85.0;
 
 export class SceneManager {
     constructor(n, m) {
@@ -34,10 +34,10 @@ export class SceneManager {
         this.particles = []
 
         /* Cloth Simulation */
-        this.n_size = 8;
-        this.m_size = 8;
-        this.x_size = 50;
-        this.y_size = 50;                
+        this.n_size = 64;
+        this.m_size = 64;
+        this.x_size = 70;
+        this.y_size = 70;                
 
         console.log(`Creating cloth with ${n} x ${m} nodes`);
     }
@@ -76,10 +76,10 @@ export class SceneManager {
         this.y_min = 5;
         this.particles = []
 
-        this.n_size = 8;
-        this.m_size = 8;
-        this.x_size = 50;
-        this.y_size = 50;
+        this.n_size = 64;
+        this.m_size = 64;
+        this.x_size = 70;
+        this.y_size = 70;
 
         this.current_type = "empty";
 
@@ -107,9 +107,9 @@ export class SceneManager {
         this.scene = new Scene();
 
         // 카메라 생성
-        this.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.camera = new PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
         this.camera.position.set(camera_pos_x, camera_pos_y, camera_pos_z); // 적절한 위치 설정
-        this.camera.lookAt(0, 0, 0);        
+        this.camera.lookAt(70, -17.3, -16.5);        
 
         // 렌더러 생성
         this.renderer = new WebGLRenderer({ antialias: true });
@@ -201,7 +201,7 @@ export class SceneManager {
             this.gui.domElement.style.top = '80px';
             this.gui.domElement.style.left = '0px';
 
-            const clothSettings = { 'cloth N': 8, 'cloth M': 8, 'x Size':30, 'y Size':30, 'Stiffness':500, 'Damping':0.001, 'line fix':false }; // 기본값 설정
+            const clothSettings = { 'cloth N': 64, 'cloth M': 64, 'x Size':30, 'y Size':30, 'Stiffness':250000, 'Damping':50, 'line fix':false }; // 기본값 설정
             this.gui.add(clothSettings, 'cloth N', 1, 100000).step(1).onChange(value => {                
                 this.n_size = value;
             });
@@ -214,13 +214,13 @@ export class SceneManager {
             this.gui.add(clothSettings, 'y Size', 10, 50).step(1).onChange(value => {                
                 this.y_size = value;
             });
-            this.gui.add(clothSettings, 'Stiffness', 10, 10000).step(1).onChange(value => {                
+            this.gui.add(clothSettings, 'Stiffness', 10, 1000000).step(1).onChange(value => {                
                 if(this.cloth_model)
                 {
                     this.cloth_model.ks = value;
                 }
             });
-            this.gui.add(clothSettings, 'Damping', 0.0001, 10.0).step(0.0001).onChange(value => {                
+            this.gui.add(clothSettings, 'Damping', 0.0001, 1000.0).step(0.0001).onChange(value => {                
                 if(this.cloth_model)
                 {
                     this.cloth_model.kd = value;
@@ -238,12 +238,13 @@ export class SceneManager {
     createCloth(){
         console.log("create cloth function");        
         this.cloth_model = new Cloth(this.n_size, this.m_size, this.x_size, this.y_size);
-        for(let i=0;i<this.cloth_model.nodes.length;i++){
-            this.scene.add(this.cloth_model.nodes.at(i).mesh);
-        }
-        for(let i=0;i<this.cloth_model.springs.length;i++){
-            this.scene.add(this.cloth_model.springs.at(i).mesh);
-        }
+        // for(let i=0;i<this.cloth_model.nodes.length;i++){
+        //     this.scene.add(this.cloth_model.nodes.at(i).mesh);
+        // }
+        // for(let i=0;i<this.cloth_model.springs.length;i++){
+        //     this.scene.add(this.cloth_model.springs.at(i).mesh);
+        // }
+        this.scene.add(this.cloth_model.triangle_mesh);
         this.current_type = "cloth";
         this.child_index_dst = this.scene.children.length;
 
@@ -302,7 +303,7 @@ export class SceneManager {
         else {
             if(this.cloth_model)
             {
-                this.cloth_model.update(0.01);
+                this.cloth_model.update(0.007);
                 this.test++;
             }
         }
