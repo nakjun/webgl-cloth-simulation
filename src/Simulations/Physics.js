@@ -7,11 +7,12 @@ export class Node {
     this.vel = vel;
     this.acc = acc;
     this.force = new Vector3();
-    this.mass = 1.0;
+    this.mass = 0.05;
     this.type = "particle";
     this.fixed = false;
 
-    this.uvs = [];
+    this.u = 0;
+    this.v = 0;
 
     this.gravity = new Vector3(0.0, -4.9, 0.0);
 
@@ -53,8 +54,8 @@ export class Node {
     if (this.fixed === true) return;
 
     // 속도 업데이트
-    this.force.add(new Vector3(0.0, 0.0, 2.0));
     this.force = this.force.divideScalar(this.mass);
+    this.force.add(new Vector3(0.0, 0.0, 2.0));
     this.force.add(this.gravity);
     this.vel.add(this.force.multiplyScalar(dt));
 
@@ -181,8 +182,8 @@ export class Cloth {
 
   createNodes() {
     // N * M 그리드의 노드를 생성하는 로직
-    const start_x = -(this.x_size / 2.0);
-    const start_y = 70.0;
+    const start_x = 30;
+    const start_y = 30;
 
     const dist_x = (this.x_size / this.N);
     const dist_y = (this.y_size / this.M);
@@ -191,7 +192,9 @@ export class Cloth {
       for (let j = 0; j < this.M; j++) {
         // 여기서 노드의 위치를 계산하고 생성해야 합니다.
         // 예: new Node(new THREE.Vector3(x, y, z));
-        var node = new Node(new Vector3(start_x + (dist_x * j), start_y - (dist_y * i), 0.0), new Vector3(0.0, 0.0, 0.0), new Vector3(0.0, 0.0, 0.0)); // 위치 계산 후 Node 생성        
+        var node = new Node(new Vector3(start_x + (dist_x * j), start_y - (dist_y * i), -10.0), new Vector3(0.0, 0.0, 0.0), new Vector3(0.0, 0.0, 0.0)); // 위치 계산 후 Node 생성        
+        node.u = j / (this.N - 1);
+        node.v = 1.0 - (i / (this.M - 1));
         const material = new MeshBasicMaterial({ color: 0xffffff });
         node.changeColor(material);
         this.nodes.push(node);
@@ -321,7 +324,8 @@ export class Cloth {
 
     // 노드 위치 추가
     this.nodes.forEach((node, index) => {
-      vertices.push(node.pos.x, node.pos.y, node.pos.z);      
+      vertices.push(node.pos.x, node.pos.y, node.pos.z);    
+      uvs.push(node.u, node.v);
     });
 
     // 삼각형 인덱스 계산
